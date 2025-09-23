@@ -6,8 +6,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Load Model dan Scaler
-model = joblib.load("C:/Users/AtikahDR/Downloads/Model Deployment 2 Materials/diabetes_model.pkl")
-scaler = joblib.load("C:/Users/AtikahDR/Downloads/Model Deployment 2 Materials/scaler.pkl")
+model = joblib.load("diabetes_model.pkl")
+scaler = joblib.load("scaler.pkl")
 
 
 # Session State untuk navigasi
