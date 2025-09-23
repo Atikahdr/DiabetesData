@@ -37,13 +37,25 @@ with st.sidebar.expander("📊 Machine Learning", expanded=True):
     if st.button("Result by Bar Chart"):
         st.session_state.page = "bar_chart"
 
-# Input Data Pasien (Sidebar)
+# Fungsi Prediksi
+def predict_diabetes(model, scaler, input_data):
+    """Fungsi untuk scaling data, prediksi, dan probabilitas"""
+
+    # Scaled
+    input_scaled = scaler.transform(input_data)
+
+    # Prediksi model
+    prediction = model.predict(input_scaled)
+    probability = model.predict_proba(input_scaled)[0]
+
+    return prediction, probability
+
+# Input Data Pasien
 if st.session_state.page == "input":
-    # Judul
     st.title("Prediksi Risiko Diabetes dengan Machine Learning")
     st.write("Isi data pasien untuk memprediksi kemungkinan diabetes. "
-         "Prediksi ini **bukan diagnosis medis**.")
-    
+             "Prediksi ini **bukan diagnosis medis**.")
+
     gender = st.radio("Jenis Kelamin", ['Perempuan', 'Laki-laki'], index=0)
     age = st.number_input("Usia (tahun)", min_value=25, max_value=77, value=30, step=1)
     urea = st.number_input("Kadar Urea (mg/dL)", min_value=1.1, max_value=26.40, value=5.0, step=0.1)
@@ -58,16 +70,13 @@ if st.session_state.page == "input":
     bmi_hba1c = st.number_input("BMI x HbA1c", min_value=19.8, max_value=475.2, value=175.2, step=0.1)
     age_bmi = st.number_input("Usia x BMI", min_value=550.0, max_value=2553.0, value=750.0, step=1.0)
 
-    # Encode Gender
     gender_encoded = 0 if gender == "Perempuan" else 1
 
-    # Array Input
-    st.session_state.input_data = np.array([[
-            gender_encoded, age, urea, cr, hba1c, chol,
-            hdl, ldl, vldl, bmi, urea_cr_ratio,
-            bmi_hba1c, age_bmi
-        ]])
+    st.session_state.input_data = np.array([[gender_encoded, age, urea, cr, hba1c, chol,
+                                             hdl, ldl, vldl, bmi, urea_cr_ratio,
+                                             bmi_hba1c, age_bmi]])
 
+# Table Page
 elif st.session_state.page == "table":
     st.title("📋 Tabel Data Pasien")
     if st.session_state.input_data is None:
@@ -88,24 +97,17 @@ elif st.session_state.page == "table":
             "BMI x HbA1c": [round(float(st.session_state.input_data[0][11]), 2)],
             "AGE x BMI": [round(float(st.session_state.input_data[0][12]), 2)]
         }
-  
+
         data_input = pd.DataFrame(st.session_state.data)
         st.session_state.data_input = data_input
-        #Table
-        data_input = pd.DataFrame(st.session_state.data)
         data_input_transpose = data_input.T
         data_input_transpose.rename(columns={0: "Data Pasien"}, inplace=True)
         st.dataframe(data_input_transpose)
 
-         # Skalakan input
-        input_scaled = scaler.transform(st.session_state.input_data)
-        
-        # Prediksi model
-        prediction = model.predict(input_scaled)
-        probability = model.predict_proba(input_scaled)[0]
-        
+        # Prediksi
+        prediction, prob = predict_diabetes(model, scaler, st.session_state.input_data)
+
         st.title("Hasil Prediksi")
-        # Hasil prediksi
         if prediction[0] == 0:
             st.success("✅ Pasien TIDAK BERISIKO terkena Diabetes")
         elif prediction[0] == 1:
@@ -113,16 +115,15 @@ elif st.session_state.page == "table":
         else:
             st.error("⚠️ Pasien BERISIKO TINGGI terkena Diabetes Type 2")
 
-#  line chart
+# Line Chart Page
 elif st.session_state.page == "line_chart":
     st.title("Hasil Prediksi & Probabilitas")
-
     if st.session_state.input_data is None or 'data' not in st.session_state:
         st.warning("⚠️ Silakan isi data pasien terlebih dahulu di menu Input Data Pasien.")
     else:
         data_input = st.session_state.data_input
 
-  # Metrik pasien
+        # Menampilkan data nama, tahun, BMI
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Jenis Kelamin", data_input["Gender"][0])
@@ -131,21 +132,16 @@ elif st.session_state.page == "line_chart":
         with col3:
             st.metric("BMI", f"{data_input['BMI'][0]:.1f} kg/m²")
 
-        # Line Chart
+        # Line Chart 
         features = ["Urea", "Cr", "HbA1c", "Chol", "HDL", "LDL", "VLDL"]
         values = [data_input[feat][0] for feat in features]
         data_line = pd.DataFrame({"Fitur": features, "Nilai": values})
         st.subheader("📈 Visualisasi Data Pasien (Line Chart)")
         st.line_chart(data_line.set_index("Fitur"), y="Nilai", height=300)
-        
-          # Skalakan input
-        input_scaled = scaler.transform(st.session_state.input_data)
 
-        # Prediksi model
-        prediction = model.predict(input_scaled)
-        probability = model.predict_proba(input_scaled)[0]
-        
-        # Hasil prediksi
+        # Prediksi
+        prediction, prob = predict_diabetes(model, scaler, st.session_state.input_data)
+
         if prediction[0] == 0:
             st.success("✅ Pasien TIDAK BERISIKO terkena Diabetes")
         elif prediction[0] == 1:
@@ -153,16 +149,15 @@ elif st.session_state.page == "line_chart":
         else:
             st.error("⚠️ Pasien BERISIKO TINGGI terkena Diabetes Type 2")
 
-#  Pie chart
+# Pie Chart Page
 elif st.session_state.page == "pie_chart":
     st.title("Hasil Prediksi & Probabilitas")
-
     if st.session_state.input_data is None or 'data' not in st.session_state:
         st.warning("⚠️ Silakan isi data pasien terlebih dahulu di menu Input Data Pasien.")
     else:
         data_input = st.session_state.data_input
-        
-        # Metrik pasien
+
+        # Menampilkan data nama, tahun, BMI
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Jenis Kelamin", data_input["Gender"][0])
@@ -171,17 +166,8 @@ elif st.session_state.page == "pie_chart":
         with col3:
             st.metric("BMI", f"{data_input['BMI'][0]:.1f} kg/m²")
 
-
-    # Skalakan input
-    if st.session_state.input_data is None:
-        st.warning("⚠️ Silakan isi data pasien terlebih dahulu di menu *Input Data Pasien*.")
-    else:
-        # Skalakan input
-        input_scaled = scaler.transform(st.session_state.input_data)
-
-        # Prediksi model
-        prediction = model.predict(input_scaled)
-        probability = model.predict_proba(input_scaled)[0]
+        # Prediksi
+        prediction, prob = predict_diabetes(model, scaler, st.session_state.input_data)
 
         if prediction[0] == 0:
             st.success("✅ Pasien TIDAK BERISIKO terkena Diabetes")
@@ -190,51 +176,33 @@ elif st.session_state.page == "pie_chart":
         else:
             st.error("⚠️ Pasien BERISIKO TINGGI terkena Diabetes Type 2")
 
-        # Pie Chart Probabilitas
+        # Pie chart probabilitas
         labels = ["Tidak Diabetes", "Diabetes Type 1", "Diabetes Type 2"]
         colors = ["forestgreen", "darkorange", "firebrick"]
+        labels = [l for l, p in zip(labels, prob) if p > 0]
+        colors = [c for c, p in zip(colors, prob) if p > 0]
+        probability = [p for p in prob if p > 0]
 
-        # Filter hanya yang > 0
-        labels = [l for l, p in zip(labels, probability) if p > 0]
-        colors = [c for c, p in zip(colors, probability) if p > 0]
-        probability = [p for p in probability if p > 0]
-
+        # Pie Chart
         fig, ax = plt.subplots(figsize=(4, 4))
-        wedges, texts, autotexts = ax.pie(
-            probability,
-            labels=labels,
-            colors=colors,
-            autopct="%1.1f%%",
-            startangle=60,
-            counterclock=False,
-            radius=0.6,
-            labeldistance=1.1,
-            pctdistance=0.5,
-            textprops={'fontsize': 8}
-        )
-
-        for autotext in autotexts:
-            autotext.set_fontsize(7)
-
+        ax.pie(probability, labels=labels, colors=colors,
+               autopct="%1.1f%%", startangle=60,
+               counterclock=False, radius=0.6,
+               labeldistance=1.1, pctdistance=0.5,
+               textprops={'fontsize': 8})
         ax.axis("equal")
         plt.tight_layout()
         st.pyplot(fig)
 
-# Button Random Forest
+# Bar Chart Page
 elif st.session_state.page == "bar_chart":
     st.title("Hasil Prediksi & Probabilitas")
-
     if st.session_state.input_data is None or 'data' not in st.session_state:
         st.warning("⚠️ Silakan isi data pasien terlebih dahulu di menu Input Data Pasien.")
     else:
-        # Skalakan input dan prediksi
-        input_scaled = scaler.transform(st.session_state.input_data)
-        prediction = model.predict(input_scaled)
-        probability = model.predict_proba(input_scaled)[0]
-
         data_input = st.session_state.data_input
 
-        # Metrik pasien
+        # Menampilkan data nama, tahun, BMI
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Jenis Kelamin", data_input["Gender"][0])
@@ -243,15 +211,15 @@ elif st.session_state.page == "bar_chart":
         with col3:
             st.metric("BMI", f"{data_input['BMI'][0]:.1f} kg/m²")
 
-         # Histogram Chart
+        # Bar Chart
         features = ["Urea", "Cr", "HbA1c", "Chol", "HDL", "LDL", "VLDL"]
         values = [data_input[feat][0] for feat in features]
         data_bar = pd.DataFrame({"Fitur": features, "Nilai": values})
-
-        # Histogram
         st.bar_chart(data_bar.set_index("Fitur"), y="Nilai", height=300)
 
-        # Hasil prediksi
+       # Prediksi
+        prediction, prob = predict_diabetes(model, scaler, st.session_state.input_data)
+
         if prediction[0] == 0:
             st.success("✅ Pasien TIDAK BERISIKO terkena Diabetes")
         elif prediction[0] == 1:
