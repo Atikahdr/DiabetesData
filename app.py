@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 model = joblib.load("diabetes_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-
 # Session State untuk navigasi
 if "page" not in st.session_state:
     st.session_state.page = "input"
@@ -35,8 +34,8 @@ with st.sidebar.expander("📊 Machine Learning", expanded=True):
     if st.button("Result by Pie Chart"):
         st.session_state.page = "pie_chart"
 
-    if st.button("Result by Histogram"):
-        st.session_state.page = "histogram"
+    if st.button("Result by Bar Chart"):
+        st.session_state.page = "bar_chart"
 
 # Input Data Pasien (Sidebar)
 if st.session_state.page == "input":
@@ -222,7 +221,7 @@ elif st.session_state.page == "pie_chart":
         st.pyplot(fig)
 
 # Button Random Forest
-elif st.session_state.page == "histogram":
+elif st.session_state.page == "bar_chart":
     st.title("Hasil Prediksi & Probabilitas")
 
     if st.session_state.input_data is None or 'data' not in st.session_state:
@@ -247,10 +246,10 @@ elif st.session_state.page == "histogram":
          # Histogram Chart
         features = ["Urea", "Cr", "HbA1c", "Chol", "HDL", "LDL", "VLDL"]
         values = [data_input[feat][0] for feat in features]
-        data_hist = pd.DataFrame({"Fitur": features, "Nilai": values})
+        data_bar = pd.DataFrame({"Fitur": features, "Nilai": values})
 
         # Histogram
-        st.bar_chart(data_hist.set_index("Fitur"), y="Nilai", height=300)
+        st.bar_chart(data_bar.set_index("Fitur"), y="Nilai", height=300)
 
         # Hasil prediksi
         if prediction[0] == 0:
