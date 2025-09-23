@@ -1,6 +1,14 @@
+import os
+import subprocess
+
+try:
+    import joblib
+except ImportError:
+    subprocess.check_call(["pip", "install", "joblib"])
+    import joblib
+    
 import streamlit as st
 import numpy as np
-import joblib
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
