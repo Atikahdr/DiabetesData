@@ -1,12 +1,6 @@
 import os
 import subprocess
-
-try:
-    import joblib
-except ImportError:
-    subprocess.check_call(["pip", "install", "joblib"])
-    import joblib
-    
+import joblib
 import streamlit as st
 import numpy as np
 import pandas as pd
